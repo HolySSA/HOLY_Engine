@@ -1,8 +1,9 @@
 ﻿// Editor_Window.cpp : 애플리케이션에 대한 진입점을 정의합니다.
 //
 
-#include "framework.h"
+#include "framework.h" // 기본 라이브러리 모음
 #include "Editor_Window.h"
+#include "Common_Include.h"
 
 #define MAX_LOADSTRING 100
 
@@ -17,10 +18,10 @@ BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
+int APIENTRY wWinMain(_In_ HINSTANCE hInstance, // 프로그램의 인스턴스 핸들.
+                     _In_opt_ HINSTANCE hPrevInstance, // 바로 앞에 실행된 현재 프로그램의 인스턴스 핸들, 없을 경우 NULL.
+                     _In_ LPWSTR    lpCmdLine, // 명령행으로 입력된 프로그램 인수.
+                     _In_ int       nCmdShow) // 프로그램이 실행될 형태, 보통 모양 정보 등이 전달된다.
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
@@ -68,6 +69,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 
     wcex.cbSize = sizeof(WNDCLASSEX);
 
+    // 각 요소들의 역할을 파악하는 것이 중요!!!
     wcex.style          = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc    = WndProc;
     wcex.cbClsExtra     = 0;
@@ -97,8 +99,14 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
 
+   // 윈도우 창 만들기
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+      CW_USEDEFAULT, 0, 1600, 900, nullptr, nullptr, hInstance, nullptr);
+
+   /* 여러 개 만들기 가능.
+   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+       CW_USEDEFAULT, 0, 1600, 900, nullptr, nullptr, hInstance, nullptr);
+   */
 
    if (!hWnd)
    {
@@ -146,7 +154,43 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
+
+            /**
+            * DC란 화면 출력에 필요한 모든 정보를 가지는 데이터 구조체 - GDI 모듈에 의해 관리된다.
+            * 폰트? 선 굵기? 색상?
+            * WinAPI에서 화면 출력에 필요한 모든 경우는 DC를 통해서 작업.
+            */
+
+            // 파랑 브러쉬 생성, 파랑 브러쉬 DC에 선택, 흰색 브러쉬 반환
+            HBRUSH blueBrush = CreateSolidBrush(RGB(0, 0, 255));
+            HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, blueBrush);
+
+            // 사각형 - 파랑 바탕 / 흰 선
+            Rectangle(hdc, 100, 100, 200, 200);
+
+            // 다시 흰색 브러쉬(디폴트)로, 파랑 브러쉬 메모리에서 삭제
+            SelectObject(hdc, oldBrush);
+            DeleteObject(blueBrush);
+
+            // 빨강 펜 생성, DC에 선택, 흰색 펜 반환
+            HPEN redPen = CreatePen(PS_SOLID, 2, RGB(255, 0, 0));
+            HBRUSH oldPen= (HBRUSH)SelectObject(hdc, redPen);
+
+            // 원 - 하양 바탕(디폴트) / 빨간 선
+            Ellipse(hdc, 200, 200, 300, 300);
+
+            // 다시 흰색 펜(디폴트)으로, 빨간펜 삭제
+            SelectObject(hdc, oldPen);
+            DeleteObject(redPen);
+
+            // 기본으로 자주 사용되는 GDI 오브젝트를 미리 DC 안에 만들어뒀는데, 이를 스톡 오브젝트라고 한다!
+            HBRUSH grayBrush = (HBRUSH)GetStockObject(GRAY_BRUSH);
+            oldBrush = (HBRUSH)SelectObject(hdc, grayBrush);
+            
+            // 회색 바탕 사각형
+            Rectangle(hdc, 400, 400, 500, 500);
+            SelectObject(hdc, oldBrush);
+
             EndPaint(hWnd, &ps);
         }
         break;
